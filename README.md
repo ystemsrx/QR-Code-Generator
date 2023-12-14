@@ -14,11 +14,16 @@ Install the necessary packages using pip:
 pip install qrcode pillow
 
 ## Usage
-After installing the required packages, run the script `QR Code Generator.py`. The application will open a window where you can:
-- Enter the URL you want to convert into a QR code.
-- Choose background and QR code colors.
-- Preview the generated QR code.
-- Save the QR code to your computer.
+To use the application, follow these steps:
+1. Run the script `QR Code Generator.py`.
+2. Enter the URL you wish to convert into a QR code in the provided field.
+3. Choose your preferred background and QR code colors.
+4. Preview the generated QR code in the application.
+5. Save the QR code to your desired location on your computer.
 
 ## Contributing
-Contributions to this project are welcome. Please feel free to fork the repository, make your changes, and submit a pull request.
+Contributions are welcome. If you have ideas for improvements or have found a bug, please feel free to:
+- Fork the repository.
+- Make your changes.
+- Submit a pull request.
+
