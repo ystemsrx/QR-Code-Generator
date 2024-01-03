@@ -22,14 +22,8 @@ This Python-based application allows users to generate custom QR codes with uniq
 ## Installation
 1. Ensure Python 3 is installed on your system.
 2. Install required libraries: `pip install pillow qrcode openai requests`.
+3. Set your OpenAI API key as an environment variable. You can do this by adding the following line to your environment variables: `export OPENAI_API_KEY='your_api_key'`. Replace `'your_api_key'` with your actual OpenAI API key.
 
 ## Usage
 Run the script `QR Code Generator with DALLE3.py` to open the GUI. Follow the on-screen instructions to create your custom QR code.
-
-```txt
-[Python script code snippet here]
-```
-
-## Contributing
-Contributions, issues, and feature requests are welcome. Feel free to check [issues page]([your-github-repository-link](https://github.com/ystemsrx?tab=repositories)https://github.com/ystemsrx?tab=repositories) for open issues or to create a new one.
 
