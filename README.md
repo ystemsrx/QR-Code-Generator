@@ -1,34 +1,35 @@
 [中文版](README.zh.md)
 
-# QR Code Generator
+# QR Code Generator with DALL-E 3 Background
 
-## Description
-This QR Code Generator is a Python application that allows users to easily create QR codes. It features a user-friendly GUI built with `tkinter` and utilizes `qrcode` and `PIL` (Python Imaging Library) for generating and displaying QR codes. The application supports customizing the QR code's colors and includes multi-language support for the interface.
+## Overview
+This Python-based application allows users to generate custom QR codes with unique backgrounds created using DALL-E 3. It features a GUI built with Tkinter, offering options for URL input, QR code customization, and AI-generated backgrounds.
 
-## Installation and Requirements
-To run this application, you need Python installed on your system. Additionally, you will need the following Python packages:
-- `tkinter`
-- `qrcode`
-- `PIL`
-Install the necessary packages using pip:
-```bash
-pip install qrcode pillow
-```
+## Features
+- **Custom QR Code Generation:** Input a URL to generate its QR code.
+- **AI-Generated Backgrounds:** Utilize DALL-E 3 to create unique backgrounds for QR codes.
+- **Customization Options:** Choose background and QR code colors, add logos, and select language preferences.
+- **Language Support:** Switch between English and Simplified Chinese interface.
+
+## Requirements
+- Python 3
+- Tkinter
+- PIL (Python Imaging Library)
+- `qrcode` Python library
+- `openai` Python library
+- `requests` Python library
+
+## Installation
+1. Ensure Python 3 is installed on your system.
+2. Install required libraries: `pip install pillow qrcode openai requests`.
 
 ## Usage
+Run the script `QR Code Generator with DALLE3.py` to open the GUI. Follow the on-screen instructions to create your custom QR code.
 
-To use the application, follow these steps:
-1. Run the script `QR Code Generator.py`.
-2. Enter the URL you wish to convert into a QR code in the provided field.
-3. Choose your preferred background and QR code colors.
-4. Preview the generated QR code in the application.
-5. Save the QR code to your desired location on your computer.
+```txt
+[Python script code snippet here]
+```
 
 ## Contributing
-
-Contributions are welcome. If you have ideas for improvements or have found a bug, please feel free to:
-- Fork the repository.
-- Make your changes.
-- Submit a pull request.
-
+Contributions, issues, and feature requests are welcome. Feel free to check [issues page]([your-github-repository-link](https://github.com/ystemsrx?tab=repositories)https://github.com/ystemsrx?tab=repositories) for open issues or to create a new one.
 
