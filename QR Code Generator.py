@@ -2,11 +2,31 @@ import tkinter as tk
 from tkinter import messagebox, colorchooser, filedialog
 import qrcode
 from PIL import Image, ImageTk
+from openai import OpenAI
+import requests
+
+client = OpenAI()
+
+def add_logo_to_qr(qr_code, logo_path, logo_size=(50, 50)):
+    # Load logo and resize
+    logo = Image.open(logo_path)
+    logo = logo.resize(logo_size, Image.Resampling.LANCZOS)
+
+    # Calculate position to place logo
+    qr_size = qr_code.size
+    logo_position = ((qr_size[0] - logo_size[0]) // 2, (qr_size[1] - logo_size[1]) // 2)
+
+    # Embed logo into QR code
+    qr_with_logo = qr_code.copy()
+    qr_with_logo.paste(logo, logo_position, logo.convert('RGBA'))
+
+    return qr_with_logo
 
 # Main window class
 class QRCodeGenerator(tk.Tk):
     def __init__(self):
         super().__init__()
+        self.file_name = None
 
         self.english_text = {
             "language_label": "Language:",
@@ -19,7 +39,12 @@ class QRCodeGenerator(tk.Tk):
             "cancel_button": "Cancel",
             "chinese_rb": "Chinese (simplified)",
             "english_rb": "English",
-            "quantity_label": "Quantity"
+            "quantity_label": "Quantity",
+            "logo_path": "Logo Path",
+            "select_logo": "Select Logo(Preview)",
+            "background_label": "AI Background (Preview)",
+            "generate_button": "Generate",
+            "remove_button": "Remove"
         }
 
         self.chinese_text = {
@@ -33,11 +58,16 @@ class QRCodeGenerator(tk.Tk):
             "cancel_button": "取消",
             "chinese_rb": "简体中文",
             "english_rb": "英文",
-            "quantity_label": "数量"
+            "quantity_label": "数量",
+            "logo_path": "Logo路径",
+            "select_logo": "选择Logo(预览)",
+            "background_label": "AI背景 (预览)",
+            "generate_button": "生成",
+            "remove_button": "移除"
         }
 
         self.title('QR Code Generator')
-        self.geometry('500x500')
+        # self.geometry('550x550')
 
         # Set initial language
         self.current_language = self.english_text
@@ -96,12 +126,66 @@ class QRCodeGenerator(tk.Tk):
 
         # Quantity Entry
         self.quantity_label = tk.Label(self, text=self.current_language["quantity_label"])
-        self.quantity_label.grid(row=6, column=0, sticky="w")
+        self.quantity_label.grid(row=7, column=0, sticky="w")
 
         self.quantity_entry = tk.Entry(self)
-        self.quantity_entry.grid(row=6, column=1, columnspan=2, sticky="we")
+        self.quantity_entry.grid(row=7, column=1, columnspan=2, sticky="we")
         self.quantity_entry.insert(0, "1")  # Default quantity
 
+        # Logo File Selection
+        self.logo_label = tk.Label(self, text=self.current_language["logo_path"])
+        self.logo_label.grid(row=6, column=0, sticky="w")  # Adjust the row and column accordingly
+
+        self.logo_entry = tk.Entry(self)
+        self.logo_entry.grid(row=6, column=1)
+
+        self.logo_button = tk.Button(self, text=self.current_language["select_logo"], command=self.choose_logo)
+        self.logo_button.grid(row=6, column=2)
+
+        self.background_label = tk.Label(self, text=self.current_language["background_label"])
+        self.background_label.grid(row=8, column=0, sticky="w")  # Adjust the row and column accordingly
+
+        self.background_entry = tk.Entry(self)
+        self.background_entry.grid(row=8, column=1)
+
+        self.generate_button = tk.Button(self, text=self.current_language["generate_button"],command=self.generate_button_clicked)
+        self.generate_button.grid(row=8, column=2)
+
+        self.remove_button = tk.Button(self, text=self.current_language["remove_button"],command=self.remove_button_clicked)
+        self.remove_button.grid(row=8, column=3)
+
+    def remove_button_clicked(self):
+    # 清除背景图像设置
+        self.file_name = None  # 将背景文件名设置为空
+        self.generate_preview()  # 重新生成预览
+
+    def generate_button_clicked(self):
+        
+        self.background_content = self.background_entry.get()
+
+        self.generate_button.config(state='disabled', text='Generating')
+
+        response = client.images.generate(
+        model="dall-e-3",
+        prompt=f"Generate a background image with low color concentration, the content is: {self.background_content}",
+        size="1024x1024",
+        quality="standard",
+        n=1,
+        )
+        image_url = response.data[0].url
+        self.file_name = f"{self.background_content}.png"
+
+        response = requests.get(image_url)
+        if response.status_code == 200:
+            with open(self.file_name, 'wb') as file:
+                file.write(response.content)
+            self.generate_button.config(state='normal', text='Generate')
+            self.generate_preview()  # 调用预览函数
+            messagebox.showinfo("Success", "Successfully create the background.")
+        else:
+            print("Error: Unable to download the image.")
+            messagebox.showinfo("Error", "Unable to download the image.")
+    
     def switch_language(self):
         # Switch the language text and update labels/buttons
         language = self.language_var.get()
@@ -115,35 +199,50 @@ class QRCodeGenerator(tk.Tk):
         self.chinese_rb.config(text=self.current_language["chinese_rb"])
         self.english_rb.config(text=self.current_language["english_rb"])
         self.quantity_label.config(text=self.current_language["quantity_label"])
+        self.logo_label.config(text=self.current_language["logo_path"])
+        self.logo_button.config(text=self.current_language["select_logo"])
+        self.background_label.config(text=self.current_language["background_label"])
+        self.generate_button.config(text=self.current_language["generate_button"])
+        self.remove_button.config(text=self.current_language["remove_button"])
         self.generate_preview()
 
     def generate_preview(self, event=None):
-        # Generate QR code preview with the current URL and selected colors
         data = self.url_entry.get()
         if data:
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
-                box_size=10,
-                border=4,
-            )
+            try:
+                # 生成二维码
+                qr = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_H,
+                    box_size=10,
+                    border=4,
+                )
+                qr.add_data(data)
+                qr.make(fit=True)
 
-            qr.add_data(data)
-            qr.make(fit=True)
-            img = qr.make_image(fill_color=self.qr_color_var.get(), back_color=self.bg_color_var.get())
+                if self.file_name:
+                    # 有背景图像的情况
+                    bg_img = Image.open(self.file_name).convert("RGBA")
+                    bg_img = bg_img.resize((300, 300), Image.Resampling.LANCZOS)
+                    
+                    qr_code_img = qr.make_image(fill_color=self.qr_color_var.get(), back_color="transparent").convert("RGBA")
+                    position = ((bg_img.width - qr_code_img.width) // 2, (bg_img.height - qr_code_img.height) // 2)
+                    bg_img.paste(qr_code_img, position, qr_code_img)
+                    final_img = bg_img
+                else:
+                    # 无背景图像，使用纯色背景的情况
+                    qr_code_img = qr.make_image(fill_color=self.qr_color_var.get(), back_color=self.bg_color_var.get())
+                    final_img = qr_code_img
 
-            # Get the current size of the preview label to resize the QR code accordingly
-            current_preview_size = (self.preview_label.winfo_width(), self.preview_label.winfo_height())
-            min_size = (160, 160)  # Adjust as needed to fit your GUI layout
-            target_size = max(current_preview_size, min_size)
+                # 显示在 GUI 上
+                self.qr_img = ImageTk.PhotoImage(final_img)
+                self.preview_label.config(image=self.qr_img, text="")
 
-            # Instead of thumbnail, resized image to target size using best resampling filter
-            img = img.resize(target_size, Image.Resampling.LANCZOS)
-
-            self.qr_img = ImageTk.PhotoImage(img)
-            self.preview_label.config(image=self.qr_img, text="")  # Remove text and set image
+            except IOError as e:
+                print("Error:", e)
+                self.preview_label.config(image='', text="Error in generating QR code.")
         else:
-            self.preview_label.config(image='', text=self.current_language["preview_label"])  # No data, show text
+            self.preview_label.config(image='', text="No data for QR code.")
 
     def choose_color(self, color_var):
         # Open a color dialog and set the selected color to the button and variable
@@ -160,6 +259,8 @@ class QRCodeGenerator(tk.Tk):
 
     def save_qr_code(self):
         base_data = self.url_entry.get()
+        logo_path = self.logo_entry.get()  # Get the logo path from the entry widget
+
         if base_data:
             try:
                 quantity = int(self.quantity_entry.get())
@@ -169,29 +270,57 @@ class QRCodeGenerator(tk.Tk):
 
             base_file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
             if not base_file_path:
-                # 用户取消了保存操作
+                # User canceled the save operation
                 return
 
             for i in range(quantity):
-                # 在原始文本后添加不同数量的空格
-                unique_data = base_data + " " * (i + 1)
+                unique_data = base_data + " " * i
 
                 qr = qrcode.QRCode(
                     version=1,
-                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    error_correction=qrcode.constants.ERROR_CORRECT_H,
                     box_size=10,
                     border=4,
                 )
                 qr.add_data(unique_data)
                 qr.make(fit=True)
-                img = qr.make_image(fill_color=self.qr_color_var.get(), back_color=self.bg_color_var.get())
+                qr_code_img = qr.make_image(fill_color=self.qr_color_var.get(), back_color="transparent").convert("RGBA")
 
-                file_path = f"{base_file_path}_{i+1}.png"
-                img.save(file_path)
+                if self.file_name:
+                    # 如果存在背景图像
+                    try:
+                        bg_img = Image.open(self.file_name).convert("RGBA")
+                        bg_img = bg_img.resize((300, 300), Image.Resampling.LANCZOS)
+
+                        position = ((bg_img.width - qr_code_img.width) // 2, (bg_img.height - qr_code_img.height) // 2)
+                        bg_img.paste(qr_code_img, position, qr_code_img)
+                        final_img = bg_img
+                    except IOError:
+                        messagebox.showerror("Error", "Unable to load the background image.")
+                        return
+                else:
+                    # 无背景图像，使用二维码图像
+                    final_img = qr_code_img
+
+                if logo_path:
+                    # 添加 Logo
+                    final_img_with_logo = add_logo_to_qr(final_img, logo_path)
+                    file_path = f"{base_file_path}_{i + 1}.png"
+                    final_img_with_logo.save(file_path)
+                else:
+                    # 保存二维码图像
+                    file_path = f"{base_file_path}_{i + 1}.png"
+                    final_img.save(file_path)
 
             messagebox.showinfo("Success", f"{quantity} QR Codes saved successfully.")
         else:
             messagebox.showerror("Error", "No base data to encode.")
+
+    def choose_logo(self):
+        logo_path = filedialog.askopenfilename(filetypes=[("Image files", "*.png;*.jpg;*.jpeg")])
+        if logo_path:
+            self.logo_entry.delete(0, tk.END)
+            self.logo_entry.insert(0, logo_path)
 
 # Run the application
 if __name__ == "__main__":
